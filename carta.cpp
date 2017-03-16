@@ -4,9 +4,15 @@
 
 #include <iostream>                     /* input and ouput*/
 
+#include <boost/program_options.hpp>    /* user interacion and parameters*/
+
 #define PI 3.1415926535
 
 using namespace cv;
+using namespace std;
+namespace po = boost::program_options;
+
+
 /**
  * Returns the value for a descrete sine Function that increases its frecuency linearly
  * It always returns a value between 0 and 1
@@ -42,6 +48,7 @@ int amplitudValue(int py, int maxY){
  * @return scaled value for X
  */
 int scaler(int val, int maxVal){
+    //TODO fix exponential scale?
     float alpha = log(maxVal - 1)/( maxVal - 1);
     //int value = exp(alpha * val);
     int value = log(val + 1)/alpha;
@@ -56,7 +63,7 @@ int scaler(int val, int maxVal){
  * @param cols Number of colums which the image will posess
  * @param rows Number of rows which the image will posees
  */
-void displayChart(bool linear, int cols = 512, int rows = 512){
+void displayChart(bool linear, int cols, int rows){
     Mat chart(rows, cols, CV_8UC1);
 
     if(linear){
@@ -72,7 +79,6 @@ void displayChart(bool linear, int cols = 512, int rows = 512){
     }
     else{
         float sine;
-        //TODO fix exponential scale
         for(int i = 0; i < cols; i++){
             sine = discreteSine(scaler(i, cols), cols);
             for(int j = 0; j < rows; j++){
@@ -93,15 +99,77 @@ void displayChart(bool linear, int cols = 512, int rows = 512){
  * @param cols Number of colums which the image will posess
  * @param rows Number of rows which the image will posees
  */
-void displaySingleLine(bool linear, int row, int numCols = 512){
-    //TODO implement display
+void displaySingleLine(bool linear, int row, int maxRows, int cols){
+    Mat chart(1, cols, CV_8UC1);
+
+    if(linear){
+        float amp = amplitudValue(row, maxRows);
+        float sine;
+        for(int i = 0; i < cols; i++){
+            sine = discreteSine(i, cols);
+            
+            chart.at<unsigned char>(0, i) = sine*amp + 128;
+        }
+    }
+    else{
+        float amp = amplitudValue(scaler(row, maxRows), maxRows);
+        float sine;
+        for(int i = 0; i < cols; i++){
+            sine = discreteSine(scaler(i, cols), cols);
+            
+            chart.at<unsigned char>(0, i) = sine*amp + 128;
+        }
+    }
+    
+    imshow( "Display window", chart);// Show the image inside it.
+    waitKey(0);
 }
 
 
 
 int main(int ac, char* av[]){
-    //TODO implement boost user interface
-    displayChart(false, 600, 400);
-    
-    return 0;      
+    try{
+        po::options_description desc("Allowed Options");
+        desc.add_options()
+                ("help", "Produce help message")
+                ("display", "Shows a Cambell-Robson chart")
+                ("rows,r", po::value<int>()->default_value(512), "Number of rows to display, default is 512")
+                ("cols,c", po::value<int>()->default_value(512), "Number of columns to display, default is 512")
+                ("linear,l", "Indicates if a linear chart is to be shown, defualt is logarithmic")
+                ("singleRow,x", po::value<int>(), "Shows a single row indicated by argument")
+        ;
+
+        po::variables_map vm;
+        po::store(po::parse_command_line(ac, av, desc), vm);
+        po::notify(vm);
+
+        if(vm.count("help")){
+            cout << desc << "\n";
+            return 0;
+        }
+        else if(vm.count("display")){
+            int rows =  vm["rows"].as<int>();
+            int cols =  vm["cols"].as<int>();
+            if(vm.count("singleRow")){
+                displaySingleLine(vm.count("linear"), vm["singleRow"].as<int>(), rows, cols);
+            }
+            else{
+                displayChart(vm.count("linear"), cols, rows);
+            }
+        }
+        else {
+            cout << desc << "\n";
+            return 0;
+        }
+
+    }
+    catch(exception& e) {
+        cerr << "error: " << e.what() << "\n";
+        return 1;
+    }
+    catch(...) {
+        cerr << "Exception of unknown type!\n";
+    }
+
+    return 0;     
 }
