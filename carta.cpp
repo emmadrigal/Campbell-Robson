@@ -1,4 +1,4 @@
-#include <math.h>                       /* cos */
+#include <math.h>                       /* sin */
 #include <opencv2/core/core.hpp>        /* Mat*/
 #include <opencv2/highgui/highgui.hpp>  /* imshow*/
 
@@ -20,14 +20,12 @@ namespace po = boost::program_options;
  * @param maxX number of columns to be displayed
  * @return The value of the function
  */
-float discreteSine(int pX, int maxX){   
+double discreteSine(double pX, int maxX){   
     //This causes the linear increase of the value
-    pX = pX*pX * PI /(2 *maxX);
+    pX = pX*pX*PI/(maxX*2.5);
     
     //Calculates the cosine Value
-    float value = cos(pX);
-    
-    return value;
+    return sin(pX);
 }
 
 /**
@@ -36,9 +34,8 @@ float discreteSine(int pX, int maxX){
  * @param maxY number of rows to be displayed
  * @return amplitud for the function
  */
-int amplitudValue(int py, int maxY){
-    int value = 127*py/(maxY-1);
-    return value;
+double amplitudValue(double py, int maxY){
+    return 127*py/(maxY-1);
 }
 
 /**
@@ -47,11 +44,11 @@ int amplitudValue(int py, int maxY){
  * @param maxVal max value t obe reached
  * @return scaled value for X
  */
-int scaler(int val, int maxVal){
+double scaler(int val, int maxVal){
     //TODO fix exponential scale?
-    float alpha = log(maxVal - 1)/( maxVal - 1);
+    double alpha = log(maxVal - 1)/( maxVal - 1);
     //int value = exp(alpha * val);
-    int value = log(val + 1)/alpha;
+    double value = log(val + 1)/alpha;
     
     return value;
 }
@@ -66,23 +63,26 @@ int scaler(int val, int maxVal){
 void displayChart(bool linear, int cols, int rows){
     Mat chart(rows, cols, CV_8UC1);
 
+
     if(linear){
-        float sine;
+        double sine;
         for(int i = 0; i < cols; i++){
             sine = discreteSine(i, cols);
             for(int j = 0; j < rows; j++){
-                float val = sine*amplitudValue(j, rows) + 128;
+                double val = sine*amplitudValue(j, rows) + 128;
+                //double val = amplitudValue(j, rows) + 128;
+                //double val = sine*127 + 128;
                 
                 chart.at<unsigned char>(j, i) = val;
             }
         }
     }
     else{
-        float sine;
+        double sine;
         for(int i = 0; i < cols; i++){
             sine = discreteSine(scaler(i, cols), cols);
             for(int j = 0; j < rows; j++){
-                float val = sine*amplitudValue(scaler(j, rows), rows) + 128;
+                double val = sine*amplitudValue(scaler(j, rows), rows) + 128;
                 
                 chart.at<unsigned char>(j, i) = val;
             }
