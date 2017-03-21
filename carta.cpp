@@ -20,9 +20,9 @@ namespace po = boost::program_options;
  * @param maxX number of columns to be displayed
  * @return The value of the function
  */
-double discreteSine(double pX, int maxX){   
+double discreteSine(double pX, int maxX){       
     //This causes the linear increase of the value
-    pX = pX*pX*PI/(maxX*2.5);
+    pX = pX*pX/(2*maxX);
     
     //Calculates the cosine Value
     return sin(pX);
@@ -45,12 +45,10 @@ double amplitudValue(double py, int maxY){
  * @return scaled value for X
  */
 double scaler(int val, int maxVal){
-    //TODO fix exponential scale?
-    double alpha = log(maxVal - 1)/( maxVal - 1);
-    //int value = exp(alpha * val);
-    double value = log(val + 1)/alpha;
+    double alpha = log(maxVal)/( maxVal - 1); 
     
-    return value;
+    return (maxVal+1)/(maxVal)*exp(val*alpha);
+    
 }
 
 
@@ -70,8 +68,6 @@ void displayChart(bool linear, int cols, int rows){
             sine = discreteSine(i, cols);
             for(int j = 0; j < rows; j++){
                 double val = sine*amplitudValue(j, rows) + 128;
-                //double val = amplitudValue(j, rows) + 128;
-                //double val = sine*127 + 128;
                 
                 chart.at<unsigned char>(j, i) = val;
             }
@@ -83,6 +79,8 @@ void displayChart(bool linear, int cols, int rows){
             sine = discreteSine(scaler(i, cols), cols);
             for(int j = 0; j < rows; j++){
                 double val = sine*amplitudValue(scaler(j, rows), rows) + 128;
+                //double val = amplitudValue(scaler(j, rows), rows) + 128;
+                //double val = sine*127 + 128;
                 
                 chart.at<unsigned char>(j, i) = val;
             }
@@ -100,15 +98,20 @@ void displayChart(bool linear, int cols, int rows){
  * @param rows Number of rows which the image will posees
  */
 void displaySingleLine(bool linear, int row, int maxRows, int cols){
-    Mat chart(1, cols, CV_8UC1);
+    Mat chart(100, cols, CV_8UC1);
+    
+    if(row > maxRows){
+        maxRows = row + 1;
+    }
 
     if(linear){
         float amp = amplitudValue(row, maxRows);
         float sine;
         for(int i = 0; i < cols; i++){
             sine = discreteSine(i, cols);
-            
-            chart.at<unsigned char>(0, i) = sine*amp + 128;
+            for(int j = 0; j < 100; j++){
+            chart.at<unsigned char>(j, i) = sine*amp + 128;
+            }
         }
     }
     else{
@@ -116,8 +119,9 @@ void displaySingleLine(bool linear, int row, int maxRows, int cols){
         float sine;
         for(int i = 0; i < cols; i++){
             sine = discreteSine(scaler(i, cols), cols);
-            
-            chart.at<unsigned char>(0, i) = sine*amp + 128;
+            for(int j = 0; j < 100; j++){
+                chart.at<unsigned char>(j, i) = sine*amp + 128;
+            }
         }
     }
     
